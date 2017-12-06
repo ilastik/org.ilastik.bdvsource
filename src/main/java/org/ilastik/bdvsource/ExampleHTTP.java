@@ -39,33 +39,34 @@ public class ExampleHTTP
 {
 	public static void main( final String[] args ) throws IOException
 	{
-		// http://emdata.janelia.org/api/node/822524777d3048b8bd520043f90c1d28/grayscale/metadata
-		final long[] minPoint = { 1728, 1536, 1344 };
-//		final long offset = minPoint;
-		final long[] offset = Arrays.stream( minPoint ).map( p -> p * 2 ).toArray();
 		final int[] cellDimensions = new int[] { 64, 64, 64 };
-//		final long[] dimensions = new long[] { 3584, 2944, 6912 }; // complete data set
-		final long[] dimensions = new long[] { 300, 300, 300 };
+        // "axes": "tczyx", "shape": [1, 3, 200, 402, 202]
+		final long[] dimensions = new long[] { 202, 402, 200 };
 		final CellGrid grid = new CellGrid( dimensions, cellDimensions );
 
+        
+        // load a specific dataset
+        HttpRequest loadProjectRequest = new HttpRequest("http://localhost:5000/api/project/load-project");
+        loadProjectRequest.post("{\"project_name\": \"bubbedibuu.ilp\"}");
+        
+        HttpRequest structuredInfoRequest = new HttpRequest("http://localhost:5000/api/workflow/get-structured-info");
+        structuredInfoRequest.get();
 
-		// GET <api URL>/node/<UUID>/<data
-		// name>/isotropic/<dims>/<size>/<offset>[/<format>][?queryopts]
-		// http://emdata.janelia.org/api/node/822524777d3048b8bd520043f90c1d28/grayscale/isotropic/0_1_2/512_256/200_200_000/jpg:80
+		// GET ilastik-server:4564/api/workflow/get-data/{dataset_name}/{source_name}/{format}/{tb_cb_zb_yb_xb}/{te_ce_ze_ye_xe}
 		final String format = String.format( "%s/%s/%s",
-				"http://emdata.janelia.org/api/node/822524777d3048b8bd520043f90c1d28/grayscale/isotropic/0_1_2",
-				"%d_%d_%d",
-				"%d_%d_%d" );
+				"http://localhost:5000/api/workflow/get-data/denk_raw/ImageGroup/raw",
+				"0_0_%d_%d_%d",
+				"1_1_%d_%d_%d" );
 		System.out.println( "format: " + format );
 		final Function< Interval, String > addressComposer = interval -> {
 			final String address = String.format(
 					format,
-					interval.max( 0 ) - interval.min( 0 ) + 1,
-					interval.max( 1 ) - interval.min( 1 ) + 1,
-					interval.max( 2 ) - interval.min( 2 ) + 1,
-					offset[ 0 ] + interval.min( 0 ),
-					offset[ 1 ] + interval.min( 1 ),
-					offset[ 2 ] + interval.min( 2 ) );
+                    interval.min( 2 ),
+                    interval.min( 1 ),
+                    interval.min( 0 ),
+					1 + interval.max( 2 ),
+					1 + interval.max( 1 ),
+					1 + interval.max( 0 ) );
 			return address;
 		};
 		final BiConsumer< byte[], DirtyVolatileByteArray > copier = ( bytes, access ) ->
@@ -113,7 +114,7 @@ public class ExampleHTTP
 
 		final BdvSource httpSource = BdvFunctions.show(
 				VolatileViews.wrapAsVolatile( httpImg, new SharedQueue( 20 ) ),
-				"dvid" );
+				"ilastik" );
 
 		final int numProc = Runtime.getRuntime().availableProcessors();
 		final BdvSource gradientSource = BdvFunctions.show(
