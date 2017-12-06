@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.scijava</groupId>
 		<artifactId>pom-scijava</artifactId>
-		<version>16.1.0</version>
+		<version>17.1.1</version>
 	</parent>
 
 	<groupId>org.ilastik</groupId>
@@ -64,7 +64,7 @@
 	<repositories>
 		<repository>
 			<id>imagej.public</id>
-			<url>https://maven.imagej.net/content/groups/public</url>
+			<url>http://maven.imagej.net/content/groups/public</url>
 		</repository>
 	</repositories>
 
