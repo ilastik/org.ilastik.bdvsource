@@ -5,5 +5,14 @@ package org.ilastik.bdvsource;
  * @author k-dominik
  */
 public class StructuredInfo {
-    public int test_int;
+    public static class ImageInfo {
+        public String name;
+        public String axes;
+        public int[] shape;
+        public int lane_number;
+        public String dtype;
+        public String dataset_name;
+        public String source_name;
+    }
+
 }

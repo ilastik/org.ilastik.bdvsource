@@ -5,7 +5,7 @@
  */
 package org.ilastik.bdvsource;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -53,9 +53,7 @@ public class StructuredInfoTest {
           "\"message\": \"Structured info retrieval successful\"",
         "}"
         );
-        ObjectMapper objectMapper = new ObjectMapper();
-        StructuredInfo loadedObject = objectMapper.readValue(jsonString, StructuredInfo.class);
-        assertEquals(loadedObject.test_int, 1);
+        Gson gson = new Gson();
     }
  
     @Test
@@ -138,6 +136,32 @@ public class StructuredInfoTest {
           "\"message\": \"Structured info retrieval successful\"",
         "}"
         );
+    }
+
+    @Test
+    public void testStructuredImageInfoDeserialization() throws Exception {
+        String jsonString = String.join("",
+        "{",
+          "\"name\": \"ImageGroup\",",
+          "\"axes\": \"tczyx\",",
+          "\"shape\": [",
+            "1,",
+            "1,",
+            "1,",
+            "250,",
+            "250",
+          "],",
+          "\"dtype\": \"uint8\",",
+          "\"version\": 0,",
+          "\"lane_number\": 0,",
+          "\"dataset_name\": \"testimg.1\",",
+          "\"source_name\": \"ImageGroup\"",
+        "}"
+        );
+        StructuredInfo.ImageInfo loadedObject;
+        Gson gson = new Gson();
+        loadedObject = gson.fromJson(jsonString, StructuredInfo.ImageInfo.class);
+        assertEquals(loadedObject.axes, "tczyx");
     }
 }
 
