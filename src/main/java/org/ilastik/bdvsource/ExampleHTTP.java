@@ -121,7 +121,7 @@ public class ExampleHTTP
                 FloatBuffer fb = bb.asFloatBuffer();
                 for(int idx=0; idx<fb.capacity(); idx++)
                 {
-                    fb.put(idx, 65535.0f * fb.get(idx));
+                    fb.put(idx, fb.get(idx));
                 }
                 fb.get(access.getCurrentStorageArray());
                 access.setDirty();
@@ -144,7 +144,8 @@ public class ExampleHTTP
 
             final Bdv bdvHttpSource = httpSource;
             bdvHttpSource.getBdvHandle().getViewerPanel().setDisplayMode( SINGLE );
-            httpSource.setDisplayRange( 0.0, 65535.0 );
+            httpSource.setDisplayRange( 0.0, 1.0 );
+            httpSource.setDisplayRangeBounds(0.0, 1.0);
         }
 	}
 }
