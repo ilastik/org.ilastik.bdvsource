@@ -6,12 +6,8 @@
 package org.ilastik.bdvsource;
 
 import com.google.gson.Gson;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
+
 import org.junit.Test;
-import org.ilastik.bdvsource.StructuredInfo;
 import static org.junit.Assert.*;
 
 /**
@@ -21,6 +17,32 @@ import static org.junit.Assert.*;
 public class StructuredInfoTest {
 
     public StructuredInfoTest() {
+    }
+
+    @Test
+    public void testStructuredImageInfoDeserialization() throws Exception {
+        String jsonString = String.join("",
+        "{",
+          "\"name\": \"ImageGroup\",",
+          "\"axes\": \"tczyx\",",
+          "\"shape\": [",
+            "1,",
+            "1,",
+            "1,",
+            "250,",
+            "250",
+          "],",
+          "\"dtype\": \"uint8\",",
+          "\"version\": 0,",
+          "\"lane_number\": 0,",
+          "\"dataset_name\": \"testimg.1\",",
+          "\"source_name\": \"ImageGroup\"",
+        "}"
+        );
+        StructuredInfo.ImageInfo loadedObject;
+        Gson gson = new Gson();
+        loadedObject = gson.fromJson(jsonString, StructuredInfo.ImageInfo.class);
+        assertEquals(loadedObject.axes, "tczyx");
     }
 
     @Test
@@ -34,10 +56,10 @@ public class StructuredInfoTest {
                 "\"axes\": \"tczyx\",",
                 "\"shape\": [",
                   "1,",
-                  "1,",
-                  "1,",
-                  "250,",
-                  "250",
+                  "2,",
+                  "3,",
+                  "450,",
+                  "550",
                 "],",
                 "\"dtype\": \"uint8\",",
                 "\"version\": 0,",
@@ -54,6 +76,12 @@ public class StructuredInfoTest {
         "}"
         );
         Gson gson = new Gson();
+        StructuredInfo loadedObject;
+        loadedObject = gson.fromJson(jsonString, StructuredInfo.class);
+        assertEquals(loadedObject.message, "Structured info retrieval successful");
+        assertEquals(loadedObject.image_names[0], "testimg.1");
+        StructuredInfo.ImageInfo info0 = loadedObject.states[0][0];
+        assertArrayEquals(info0.shape, new int[] {1, 2, 3, 450, 550});
     }
  
     @Test
@@ -67,10 +95,10 @@ public class StructuredInfoTest {
                 "\"axes\": \"tczyx\",",
                 "\"shape\": [",
                   "1,",
-                  "1,",
-                  "1,",
-                  "250,",
-                  "250",
+                  "2,",
+                  "3,",
+                  "450,",
+                  "550",
                 "],",
                 "\"dtype\": \"uint8\",",
                 "\"version\": 0,",
@@ -116,11 +144,11 @@ public class StructuredInfoTest {
                 "\"name\": \"CachedPredictionImage\",",
                 "\"axes\": \"tczyx\",",
                 "\"shape\": [",
-                  "1,",
-                  "49,",
-                  "1,",
-                  "250,",
-                  "250",
+                  "111,",
+                  "222,",
+                  "333,",
+                  "444,",
+                  "555",
                 "],",
                 "\"dtype\": \"float32\",",
                 "\"version\": 0,",
@@ -128,6 +156,7 @@ public class StructuredInfoTest {
                 "\"dataset_name\": \"testimg.2\",",
                 "\"source_name\": \"CachedPredictionImage\"",
               "}",
+            "]",
           "],",
           "\"image_names\": [",
             "\"testimg.1\",",
@@ -136,32 +165,15 @@ public class StructuredInfoTest {
           "\"message\": \"Structured info retrieval successful\"",
         "}"
         );
-    }
-
-    @Test
-    public void testStructuredImageInfoDeserialization() throws Exception {
-        String jsonString = String.join("",
-        "{",
-          "\"name\": \"ImageGroup\",",
-          "\"axes\": \"tczyx\",",
-          "\"shape\": [",
-            "1,",
-            "1,",
-            "1,",
-            "250,",
-            "250",
-          "],",
-          "\"dtype\": \"uint8\",",
-          "\"version\": 0,",
-          "\"lane_number\": 0,",
-          "\"dataset_name\": \"testimg.1\",",
-          "\"source_name\": \"ImageGroup\"",
-        "}"
-        );
-        StructuredInfo.ImageInfo loadedObject;
         Gson gson = new Gson();
-        loadedObject = gson.fromJson(jsonString, StructuredInfo.ImageInfo.class);
-        assertEquals(loadedObject.axes, "tczyx");
+        StructuredInfo loadedObject;
+        loadedObject = gson.fromJson(jsonString, StructuredInfo.class);
+        assertEquals(loadedObject.message, "Structured info retrieval successful");
+        assertEquals(loadedObject.image_names[0], "testimg.1");
+        StructuredInfo.ImageInfo info00 = loadedObject.states[0][0];
+        assertArrayEquals(info00.shape, new int[] {1, 2, 3, 450, 550});
+        StructuredInfo.ImageInfo info11 = loadedObject.states[1][1];
+        assertArrayEquals(info11.shape, new int[] {111, 222, 333, 444, 555});
     }
 }
 

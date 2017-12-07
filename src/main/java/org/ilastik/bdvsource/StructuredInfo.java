@@ -15,4 +15,7 @@ public class StructuredInfo {
         public String source_name;
     }
 
+    public ImageInfo[][] states;
+    public String[] image_names;
+    public String message;
 }
