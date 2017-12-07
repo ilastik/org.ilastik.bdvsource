@@ -9,18 +9,24 @@ import java.util.function.Function;
 
 import bdv.util.Bdv;
 import bdv.util.BdvFunctions;
+import bdv.util.BdvOptions;
 import bdv.util.BdvSource;
 import bdv.util.volatiles.SharedQueue;
 import bdv.util.volatiles.VolatileViews;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.FloatBuffer;
 import net.imglib2.Interval;
 import net.imglib2.cache.img.DiskCachedCellImgFactory;
 import net.imglib2.cache.img.DiskCachedCellImgOptions;
 import net.imglib2.cache.img.DiskCachedCellImgOptions.CacheType;
 import net.imglib2.cache.util.IntervalKeyLoaderAsLongKeyLoader;
 import net.imglib2.img.Img;
+import net.imglib2.img.basictypeaccess.volatiles.array.DirtyVolatileFloatArray;
 import net.imglib2.img.basictypeaccess.volatiles.array.DirtyVolatileByteArray;
 import net.imglib2.img.cell.CellGrid;
 import net.imglib2.type.numeric.integer.UnsignedByteType;
+import net.imglib2.type.numeric.real.FloatType;
 
 public class ExampleHTTP
 {
@@ -37,47 +43,108 @@ public class ExampleHTTP
         loadProjectRequest.post("{\"project_name\": \"bubbedibuu.ilp\"}");
         
         HttpRequest structuredInfoRequest = new HttpRequest("http://localhost:5000/api/workflow/get-structured-info");
-        structuredInfoRequest.get();
+        System.out.println(structuredInfoRequest.get());
 
-		// GET ilastik-server:4564/api/workflow/get-data/{dataset_name}/{source_name}/{format}/{tb_cb_zb_yb_xb}/{te_ce_ze_ye_xe}
-		final String format = String.format( "%s/%s/%s",
-				"http://localhost:5000/api/workflow/get-data/denk_raw/ImageGroup/raw",
-				"0_0_%d_%d_%d",
-				"1_1_%d_%d_%d" );
-		System.out.println( "format: " + format );
-		final Function< Interval, String > addressComposer = interval -> {
-			final String address = String.format(
-					format,
-                    interval.min( 2 ),
-                    interval.min( 1 ),
-                    interval.min( 0 ),
-					1 + interval.max( 2 ),
-					1 + interval.max( 1 ),
-					1 + interval.max( 0 ) );
-			return address;
-		};
-		final BiConsumer< byte[], DirtyVolatileByteArray > copier = ( bytes, access ) ->
-		{
-			System.arraycopy( bytes, 0, access.getCurrentStorageArray(), 0, bytes.length );
-			access.setDirty();
-		};
-		final HTTPLoader< DirtyVolatileByteArray > functor = new HTTPLoader<>( addressComposer, ( n ) -> new DirtyVolatileByteArray( ( int ) n, true ), copier );
-		final IntervalKeyLoaderAsLongKeyLoader< DirtyVolatileByteArray > loader = new IntervalKeyLoaderAsLongKeyLoader<>( grid, functor );
+        // --------------------------------------------------------------
+        // Add raw data source
+        final Bdv bdv;
+        final SharedQueue queue = new SharedQueue( 20 );
+        {
+            // GET ilastik-server:4564/api/workflow/get-data/{dataset_name}/{source_name}/{format}/{tb_cb_zb_yb_xb}/{te_ce_ze_ye_xe}
+            final String format = String.format( "%s/%s/%s",
+                    "http://localhost:5000/api/workflow/get-data/denk_raw/ImageGroup/raw",
+                    "0_0_%d_%d_%d",
+                    "1_1_%d_%d_%d" );
+            System.out.println( "format: " + format );
+            final Function< Interval, String > addressComposer = interval -> {
+                final String address = String.format(
+                        format,
+                        interval.min( 2 ),
+                        interval.min( 1 ),
+                        interval.min( 0 ),
+                        1 + interval.max( 2 ),
+                        1 + interval.max( 1 ),
+                        1 + interval.max( 0 ) );
+                return address;
+            };
+            final BiConsumer< byte[], DirtyVolatileByteArray > copier = ( bytes, access ) ->
+            {
+                System.arraycopy( bytes, 0, access.getCurrentStorageArray(), 0, bytes.length );
+                access.setDirty();
+            };
+            final HTTPLoader< DirtyVolatileByteArray > functor = new HTTPLoader<>( addressComposer, ( n ) -> new DirtyVolatileByteArray( ( int ) n, true ), copier );
+            final IntervalKeyLoaderAsLongKeyLoader< DirtyVolatileByteArray > loader = new IntervalKeyLoaderAsLongKeyLoader<>( grid, functor );
 
-		final DiskCachedCellImgOptions factoryOptions = options()
-				.cacheType( CacheType.BOUNDED )
-				.maxCacheSize( 1000 )
-				.cellDimensions( cellDimensions );
+            final DiskCachedCellImgOptions factoryOptions = options()
+                    .cacheType( CacheType.BOUNDED )
+                    .maxCacheSize( 1000 )
+                    .cellDimensions( cellDimensions );
 
-		final Img< UnsignedByteType > httpImg = new DiskCachedCellImgFactory< UnsignedByteType >( factoryOptions )
-				.createWithCacheLoader( dimensions, new UnsignedByteType(), loader );
+            final Img< UnsignedByteType > httpImg = new DiskCachedCellImgFactory< UnsignedByteType >( factoryOptions )
+                    .createWithCacheLoader( dimensions, new UnsignedByteType(), loader );
 
-		final BdvSource httpSource = BdvFunctions.show(
-				VolatileViews.wrapAsVolatile( httpImg, new SharedQueue( 20 ) ),
-				"ilastik" );
+            final BdvSource httpSource = BdvFunctions.show(
+                    VolatileViews.wrapAsVolatile( httpImg, queue ),
+                    "ilastik" );
 
-		final Bdv bdv = httpSource;
-		bdv.getBdvHandle().getViewerPanel().setDisplayMode( SINGLE );
-		httpSource.setDisplayRange( 0.0, 255.0 );
+            bdv = httpSource;
+            bdv.getBdvHandle().getViewerPanel().setDisplayMode( SINGLE );
+            httpSource.setDisplayRange( 0.0, 255.0 );
+        }
+        // --------------------------------------------------------------
+        // Add prediction source
+        for(long c = 0; c < 3; c++)
+        {
+            final String format = String.format( "%s/%s/%s",
+                    "http://localhost:5000/api/workflow/get-data/denk_raw/CachedPredictionProbabilities/raw",
+                    "0_%d_%d_%d_%d",
+                    "1_%d_%d_%d_%d" );
+            System.out.println( "format: " + format );
+            final long tmp = c;
+            final Function< Interval, String > addressComposer = interval -> {
+                final String address = String.format(
+                        format,
+                        tmp,
+                        interval.min( 2 ),
+                        interval.min( 1 ),
+                        interval.min( 0 ),
+                        1 + tmp,
+                        1 + interval.max( 2 ),
+                        1 + interval.max( 1 ),
+                        1 + interval.max( 0 ) );
+                return address;
+            };
+            final BiConsumer< byte[], DirtyVolatileFloatArray > copier = ( bytes, access ) ->
+            {
+                ByteBuffer bb = ByteBuffer.wrap(bytes);
+                bb.order(ByteOrder.LITTLE_ENDIAN);
+                FloatBuffer fb = bb.asFloatBuffer();
+                for(int idx=0; idx<fb.capacity(); idx++)
+                {
+                    fb.put(idx, 65535.0f * fb.get(idx));
+                }
+                fb.get(access.getCurrentStorageArray());
+                access.setDirty();
+            };
+            final HTTPLoader< DirtyVolatileFloatArray > functor = new HTTPLoader<>( addressComposer, ( n ) -> new DirtyVolatileFloatArray( ( int ) n, true ), copier );
+            final IntervalKeyLoaderAsLongKeyLoader< DirtyVolatileFloatArray > loader = new IntervalKeyLoaderAsLongKeyLoader<>( grid, functor );
+
+            final DiskCachedCellImgOptions factoryOptions = options()
+                    .cacheType( CacheType.BOUNDED )
+                    .maxCacheSize( 1000 )
+                    .cellDimensions( cellDimensions );
+
+            final Img< FloatType > httpImg = new DiskCachedCellImgFactory< FloatType >( factoryOptions )
+                    .createWithCacheLoader( dimensions, new FloatType(), loader );
+
+            final BdvSource httpSource = BdvFunctions.show(
+                    VolatileViews.wrapAsVolatile( httpImg, queue ),
+                    "Prediction Channel " + c,
+                    BdvOptions.options().addTo(bdv) );
+
+            final Bdv bdvHttpSource = httpSource;
+            bdvHttpSource.getBdvHandle().getViewerPanel().setDisplayMode( SINGLE );
+            httpSource.setDisplayRange( 0.0, 65535.0 );
+        }
 	}
 }
