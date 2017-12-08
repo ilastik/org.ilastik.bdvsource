@@ -12,7 +12,7 @@ import static org.junit.Assert.*;
 
 /**
  *
- * @author dkutra
+ * @author k-dominik
  */
 public class StructuredInfoTest {
 
