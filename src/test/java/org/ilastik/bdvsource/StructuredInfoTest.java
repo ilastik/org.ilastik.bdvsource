@@ -81,9 +81,9 @@ public class StructuredInfoTest {
         assertEquals(loadedObject.message, "Structured info retrieval successful");
         assertEquals(loadedObject.image_names[0], "testimg.1");
         StructuredInfo.ImageInfo info0 = loadedObject.states[0][0];
-        assertArrayEquals(info0.shape, new int[] {1, 2, 3, 450, 550});
+        assertArrayEquals(info0.shape, new long[] {1, 2, 3, 450, 550});
     }
- 
+
     @Test
     public void testStructuredInfoDeserializationFull() throws Exception {
         String jsonString = String.join("",
@@ -171,9 +171,9 @@ public class StructuredInfoTest {
         assertEquals(loadedObject.message, "Structured info retrieval successful");
         assertEquals(loadedObject.image_names[0], "testimg.1");
         StructuredInfo.ImageInfo info00 = loadedObject.states[0][0];
-        assertArrayEquals(info00.shape, new int[] {1, 2, 3, 450, 550});
+        assertArrayEquals(info00.shape, new long[] {1, 2, 3, 450, 550});
         StructuredInfo.ImageInfo info11 = loadedObject.states[1][1];
-        assertArrayEquals(info11.shape, new int[] {111, 222, 333, 444, 555});
+        assertArrayEquals(info11.shape, new long[] {111, 222, 333, 444, 555});
     }
 }
 
