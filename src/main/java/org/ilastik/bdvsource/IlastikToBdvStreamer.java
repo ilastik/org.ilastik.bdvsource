@@ -87,6 +87,7 @@ public class IlastikToBdvStreamer implements Command, ActionListener {
     
     private void showDatasetSelectionDialog(String[] projectList) {
         frameSelectDataset = new JFrame();
+        frameSelectDataset.setTitle("Select dataset on ilastik server");
         JButton b1 = new JButton("Select");
         b1.setActionCommand("selectDataset");
         b1.addActionListener(this);
