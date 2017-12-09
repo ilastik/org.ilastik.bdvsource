@@ -29,15 +29,23 @@ import net.imglib2.img.cell.CellGrid;
 import net.imglib2.type.numeric.integer.UnsignedByteType;
 import net.imglib2.type.numeric.real.FloatType;
 
-public class ExampleHTTP {
+public class BdvIlastikFrontend {
 
-    public static void main(final String[] args) throws IOException {
-        // load a specific dataset
-        final String ilastikServerBaseUrl = "http://localhost:5000";
+    private String ilastikServerBaseUrl;
+    private String ilastikProjectName;
+    
+    public BdvIlastikFrontend(String ilastikServerBaseUrl, String ilastikProjectName)
+    {
+        this.ilastikServerBaseUrl = ilastikServerBaseUrl;
+        this.ilastikProjectName = ilastikProjectName;
+    }
+    
+    public void run()
+    {        
         // load a specific dataset
         HttpRequest loadProjectRequest = new HttpRequest(
                 String.format("%s/api/project/load-project", ilastikServerBaseUrl));
-        loadProjectRequest.post("{\"project_name\": \"drosophilaServerTest.ilp\"}");
+        loadProjectRequest.post("{\"project_name\": \"" + ilastikProjectName +"\"}");
 
         HttpRequest structuredInfoRequest = new HttpRequest(
                 String.format("%s/api/workflow/get-structured-info", ilastikServerBaseUrl));
@@ -187,5 +195,9 @@ public class ExampleHTTP {
             httpSource.setDisplayRange(0.0, 1.0);
             httpSource.setDisplayRangeBounds(0.0, 1.0);
         }
+    }
+    
+    public static void main(final String[] args) throws IOException {
+        new BdvIlastikFrontend("http://localhost:5000", "bubbedibuu.ilp").run();
     }
 }
